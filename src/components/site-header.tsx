@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CloseIcon, MenuIcon, SparkleIcon } from '@/components/icons';
+import { CloseIcon, MenuIcon, SearchIcon, SparkleIcon } from '@/components/icons';
 import { LogoMark } from '@/components/ornaments';
+import { SearchDialog } from '@/components/search-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
@@ -23,6 +24,7 @@ function isActive(pathname: string, href: string): boolean {
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -30,6 +32,19 @@ export function SiteHeader() {
       document.body.style.overflow = '';
     };
   }, [open]);
+
+  // Global shortcut: Ctrl/Cmd + K opens search from anywhere.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
@@ -69,6 +84,16 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="icon-btn"
+            aria-label="البحث في القرآن"
+            title="بحث (Ctrl + K)"
+          >
+            <SearchIcon size={18} />
+          </button>
+
           <ThemeToggle />
 
           <Link href="/surah/1" className="btn btn-primary hidden !px-5 !py-2.5 text-sm sm:inline-flex">
@@ -115,6 +140,8 @@ export function SiteHeader() {
           </Link>
         </div>
       ) : null}
+
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }
