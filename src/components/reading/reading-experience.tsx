@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  BookOpenIcon,
   PauseIcon,
   PlayIcon,
 } from '@/components/icons';
@@ -170,6 +171,15 @@ function ReadingLayout({
             className="order-last w-full sm:order-none sm:w-56"
           />
           <SettingsMenu />
+
+          <Link
+            href={`/mushaf/${surah.ayahs[0]?.page ?? 1}`}
+            className="icon-btn shrink-0"
+            aria-label="فتح صفحة المصحف"
+            title="وضع المصحف"
+          >
+            <BookOpenIcon size={18} />
+          </Link>
 
           <button
             type="button"

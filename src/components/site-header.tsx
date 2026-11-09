@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 const navItems = [
   { href: '/', label: 'الرئيسية' },
   { href: '/#surahs', label: 'فهرس السور' },
+  { href: '/mushaf', label: 'المصحف' },
   { href: '/reciters', label: 'القرّاء' },
   { href: '/bookmarks', label: 'المحفوظات' },
 ];
@@ -64,7 +65,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="التنقل الرئيسي">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="التنقل الرئيسي">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -104,7 +105,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            className="icon-btn md:hidden"
+            className="icon-btn lg:hidden"
             aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'}
             aria-expanded={open}
           >
@@ -114,7 +115,7 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="fixed inset-x-0 top-[74px] z-50 border-t border-border bg-background/98 px-4 pb-8 pt-4 backdrop-blur-xl md:hidden">
+        <div className="fixed inset-x-0 top-[74px] z-50 border-t border-border bg-background/98 px-4 pb-8 pt-4 backdrop-blur-xl lg:hidden">
           <nav className="flex flex-col gap-1" aria-label="قائمة الجوال">
             {navItems.map((item) => {
               const active = isActive(pathname, item.href);
