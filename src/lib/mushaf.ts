@@ -2,9 +2,9 @@ import 'server-only';
 
 import quranData from '@/data/quran.json';
 import { getSurahMeta, type Ayah } from './quran';
+import { MUSHAF_PAGE_COUNT } from './mushaf-pages';
 
-/** The Madani mushaf used by this project has exactly 604 pages. */
-export const MUSHAF_PAGE_COUNT = 604;
+export { MUSHAF_PAGE_COUNT };
 
 /**
  * Page images come from the quran-svg project (MIT), derived from the official

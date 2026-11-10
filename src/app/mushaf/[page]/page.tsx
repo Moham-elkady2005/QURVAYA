@@ -43,15 +43,30 @@ export async function generateMetadata({ params }: MushafPageProps): Promise<Met
     meta.juz,
   )}. اقرأها كما في المصحف المطبوع، أو افتح وضع القراءة والاستماع.`;
 
+  // Social previews show the page itself, so a shared mushaf link is
+  // recognisable before it is opened.
+  const image = mushafPageImageUrl(page);
+  const imageAlt = `صفحة ${toArabicDigits(page)} من المصحف الشريف — ${surahNames}`;
+  const socialTitle = `${title} | مشكاة`;
+
   return {
     title,
     description,
     alternates: { canonical: `/mushaf/${page}` },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url: `/mushaf/${page}`,
+      siteName: 'مشكاة',
+      locale: 'ar_AR',
       type: 'article',
+      images: [{ url: image, width: 700, height: 1055, alt: imageAlt }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: socialTitle,
+      description,
+      images: [{ url: image, alt: imageAlt }],
     },
   };
 }

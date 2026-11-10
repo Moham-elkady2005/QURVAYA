@@ -14,12 +14,17 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   BookOpenIcon,
+  CheckIcon,
   CloseIcon,
   ExpandIcon,
+  PauseIcon,
+  PlayIcon,
+  ShareIcon,
   ZoomInIcon,
   ZoomOutIcon,
 } from '@/components/icons';
 import { toArabicDigits } from '@/lib/quran';
+import { useMushafAudio } from './mushaf-audio';
 
 type PageSurah = {
   number: number;
@@ -87,17 +92,28 @@ export function MushafViewer({
   juzStarts,
 }: MushafViewerProps) {
   const router = useRouter();
+  const {
+    page: audioPage,
+    isPlaying: audioPlaying,
+    isLoading: audioLoading,
+    playPage,
+    toggle: toggleAudio,
+    isVisible: audioVisible,
+  } = useMushafAudio();
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [jump, setJump] = useState(String(page));
+  const [shared, setShared] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
   const zoom = ZOOM_LEVELS[zoomIndex];
   const readingHref = `/surah/${meta.firstAyah.surah}?ayah=${meta.firstAyah.ayah}`;
   const startingSurah = surahStarts.find((surah) => surah.page === page);
   const selectedSurah = String(startingSurah?.number ?? meta.surahs[0]?.number ?? '');
+  const listeningThisPage = audioPage === page;
+  const playingThisPage = listeningThisPage && audioPlaying;
 
   useEffect(() => {
     setLoaded(false);
@@ -105,6 +121,7 @@ export function MushafViewer({
     setZoomIndex(0);
     setExpanded(false);
     setJump(String(page));
+    setShared(false);
   }, [page]);
 
   // Warm the neighbours so the next/previous page opens instantly.
@@ -155,6 +172,45 @@ export function MushafViewer({
     if (Number.isFinite(value)) goToPage(value);
   };
 
+  const handleListen = () => {
+    if (listeningThisPage) {
+      toggleAudio();
+      return;
+    }
+
+    // The player moves to this page as soon as the last ayah ends; warming the
+    // route makes that page turn instant.
+    if (page < totalPages) router.prefetch(`/mushaf/${page + 1}`);
+    playPage(page);
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/mushaf/${page}`;
+    const title = `صفحة ${toArabicDigits(page)} من المصحف الشريف`;
+    const surahNames = meta.surahs.map((surah) => `سورة ${surah.name}`).join(' و');
+    const text = `${surahNames} — صفحة ${toArabicDigits(page)}`;
+
+    // Native share sheet on supported devices (mostly mobile).
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch (error) {
+        // The user dismissing the sheet is not an error — stop quietly.
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+
+    // Desktop fallback: copy the page link to the clipboard.
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      window.setTimeout(() => setShared(false), 1600);
+    } catch {
+      setShared(false);
+    }
+  };
+
   const handleTouchStart = (event: ReactTouchEvent) => {
     touchStartX.current = event.touches[0]?.clientX ?? null;
   };
@@ -173,7 +229,11 @@ export function MushafViewer({
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 pb-16 pt-6 sm:px-6">
+    <div
+      className={`mx-auto w-full max-w-4xl px-3 pt-6 sm:px-6 ${
+        audioVisible ? 'pb-44 sm:pb-36' : 'pb-16'
+      }`}
+    >
       <div className="surface-card p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -231,6 +291,25 @@ export function MushafViewer({
             >
               <ExpandIcon size={16} />
             </button>
+
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+
+            <button
+              type="button"
+              onClick={() => void handleShare()}
+              className="icon-btn size-8"
+              aria-label={shared ? 'تم نسخ رابط الصفحة' : 'مشاركة الصفحة'}
+              title={shared ? 'تم نسخ الرابط' : 'مشاركة الصفحة'}
+            >
+              {shared ? (
+                <CheckIcon size={16} className="text-primary" />
+              ) : (
+                <ShareIcon size={16} />
+              )}
+            </button>
+            <span className="sr-only" role="status">
+              {shared ? 'تم نسخ رابط الصفحة' : ''}
+            </span>
           </div>
         </div>
 
@@ -284,7 +363,33 @@ export function MushafViewer({
             </button>
           </form>
 
-          <Link href={readingHref} className="btn btn-primary ms-auto !px-4 !py-2 text-xs">
+          <button
+            type="button"
+            onClick={handleListen}
+            className="btn btn-outline ms-auto !px-4 !py-2 text-xs"
+            aria-label={
+              playingThisPage
+                ? 'إيقاف الاستماع للصفحة'
+                : listeningThisPage
+                  ? 'متابعة الاستماع للصفحة'
+                  : 'الاستماع إلى الصفحة'
+            }
+          >
+            {audioLoading && listeningThisPage ? (
+              <span className="size-3.5 animate-spin rounded-full border-2 border-foreground/25 border-t-foreground" />
+            ) : playingThisPage ? (
+              <PauseIcon size={14} />
+            ) : (
+              <PlayIcon size={14} />
+            )}
+            {playingThisPage
+              ? 'إيقاف الاستماع'
+              : listeningThisPage
+                ? 'متابعة الاستماع'
+                : 'استمع للصفحة'}
+          </button>
+
+          <Link href={readingHref} className="btn btn-primary !px-4 !py-2 text-xs">
             <BookOpenIcon size={15} />
             اقرأ واستمع
           </Link>
